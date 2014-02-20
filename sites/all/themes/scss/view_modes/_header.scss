@@ -1,0 +1,13 @@
+
+.content-header {
+  @include grid-row($behavior: nest);
+
+  .content-header-img {
+    @include grid-column(2);
+  }
+  .content-header-text {
+    @include grid-column(10);
+
+  }
+
+}

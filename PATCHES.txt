@@ -1,0 +1,9 @@
+The following patches have been applied:
+
+
+Modules 
+
+ctools:  drupal-1958538-8.patch                             
+rules: rules-jquery_update_compatibility-1810656-37.patch
+
+

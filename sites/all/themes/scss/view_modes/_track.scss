@@ -1,0 +1,27 @@
+
+.hub-track {
+  border: 1px solid $border-color;
+  padding: 0.5em;
+  margin-bottom: 1.5em;
+}
+
+
+.view-aggregated-rights  {
+  margin: 2em 0;
+  #edit-t1-wrapper, #edit-t2-wrapper, #edit-submit-aggregated-rights {
+    display: none;
+  }
+  .views-exposed-form .views-exposed-widget {
+    float: none;
+    padding: 0;
+  }
+  #edit-range-container {
+    border: none;
+    background: $secondary-color;
+  }
+}
+
+.rules-link-add_as_maker_of_clip .rules-link,
+.rules-link-add_clip_as_subclip_of_clip .rules-link {
+  @include button($padding: $button-tny, $full-width: true);
+}

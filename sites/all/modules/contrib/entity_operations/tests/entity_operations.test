@@ -1,0 +1,371 @@
+<?php
+
+/**
+ * @file
+ * Contains tests for the Entity operations module.
+ */
+
+/**
+ * Abstract base class for tests involving entity CRUD forms.
+ */
+abstract class EntityOperationsEntityFormsBase extends DrupalWebTestCase {
+
+  /**
+   * Test basic CRUD operations for the test entity type.
+   *
+   * This test provides common testing of CRUD forms for an entity type. Child
+   * classes wishing to make use of it should set the following properties in
+   * their setUp():
+   *  - $this->entity_type
+   *  - $this->entity_base_path
+   */
+  function testCRUDOperations() {
+    // Test add operation.
+    $this->drupalGet($this->entity_base_path . '/add');
+
+    $this->assertTitle('Add test entity | Drupal', 'The add operation page is displayed.');
+    $this->assertText('Add Alpha', "The add operation page shows a link to add an entity of bundle 'alpha'.");
+    $this->assertText('Add Beta', "The add operation page shows a link to add an entity of bundle 'beta'.");
+
+    $this->drupalGet($this->entity_base_path . '/add/alpha');
+    $this->assertTitle('Add alpha test entity | Drupal', "The add form title is shown for a specific entity bundle.");
+    $this->assertFieldByName('title', NULL, 'The title field is shown on the entity add form.');
+
+    // Don't use randomString(), it causes wacky issues with funny characters.
+    $entity_title = $this->randomName();
+    $edit = array(
+      'title' => $entity_title,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $this->assertTitle("$entity_title | Drupal", "The user was redirected to the entity after saving the add form.");
+    $this->assertText("The Test Entity $entity_title has been saved.", "The user is shown a status message.");
+
+    // Load the newly created entity by its title.
+    $query = new EntityFieldQuery();
+    $query
+      ->entityCondition('entity_type', $this->entity_type)
+      ->propertyCondition('title', $entity_title);
+    $result = $query->execute();
+    $this->assertTrue(isset($result[$this->entity_type]), t('The entity was saved.'));
+
+    $entity_stub = array_pop($result[$this->entity_type]);
+    $entity = entity_load_single($this->entity_type, $entity_stub->eid);
+
+    // Test view operation.
+    $this->drupalGet($this->entity_base_path . '/' . $entity->eid);
+    $this->assertTitle("$entity_title | Drupal", "The entity title is shown.");
+
+    // Test edit operation.
+    $this->drupalGet($this->entity_base_path . '/' . $entity->eid . '/edit');
+
+    $this->assertTitle("Edit $entity_title | Drupal", "The edit form title is shown.");
+    $this->assertFieldByName('title', $entity_title, 'The title field is shown on the entity edit form and shows the entity title.');
+
+    $entity_title_changed = $this->randomName();
+    $edit = array(
+      'title' => $entity_title_changed,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    $this->assertTitle("$entity_title_changed | Drupal", "The user was redirected to the entity after saving the edit form.");
+    $this->assertText("The Test Entity $entity_title_changed has been saved.", "The status message is shown.");
+
+    // Clear the cache so we can load fresh entities.
+    entity_get_controller($this->entity_type)->resetCache();
+    $entity = entity_load_single($this->entity_type, $entity_stub->eid);
+
+    $this->assertEqual($entity->title, $entity_title_changed, "The entity title was changed.");
+
+    // Test delete operation.
+    $this->drupalGet($this->entity_base_path . '/' . $entity->eid . '/delete');
+    $this->assertTitle("Delete $entity_title_changed? | Drupal", "The delete form title is shown.");
+    $this->assertText("Are you sure you want to delete the Test Entity $entity_title_changed?",
+      "The confirmation message is shown.");
+    $this->assertText("Cancel", "The cancel link is shown.");
+
+    $this->drupalPost(NULL, array(), t('Delete Test Entity'));
+
+    // Check status message
+    $this->assertText("The Test Entity $entity_title_changed has been deleted.", "The status message is shown.");
+
+    // Clear the cache so we can load fresh entities.
+    entity_get_controller($this->entity_type)->resetCache();
+    $entity = entity_load_single($this->entity_type, $entity_stub->eid);
+
+    $this->assertFalse($entity, "The entity has been deleted.");
+  }
+
+}
+
+/**
+ * Test case for Entity Operations on an entity using entity form handlers.
+ */
+class EntityOperationsEntityFormsTestCase extends EntityOperationsEntityFormsBase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Entity Operations entity forms'),
+      'description' => t('Test built-in operations on entity type using the entity form handlers.'),
+      'group' => t('Entity Operations'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('entity_operations', 'entity_operations_test'));
+
+    $this->entity_base_path = 'entity_operations_test';
+    $this->entity_type = 'entity_operations_test';
+  }
+
+  function testCRUDOperations() {
+    // The test method is in the parent base class. This is here just for DX.
+    parent::testCRUDOperations();
+  }
+
+}
+
+/**
+ * Test case for Entity Operations on an entity using generic form handlers.
+ */
+class EntityOperationsGenericFormsTestCase extends EntityOperationsEntityFormsBase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Entity Operations generic forms'),
+      'description' => t('Test built-in operations on entity type using the generic form handlers.'),
+      'group' => t('Entity Operations'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('entity_operations', 'entity_operations_generic_test'));
+
+    $this->entity_base_path = 'entity_operations_generic_test';
+    $this->entity_type = 'entity_operations_generic_test';
+  }
+
+  function testCRUDOperations() {
+    // The test method is in the parent base class. This is here just for DX.
+    parent::testCRUDOperations();
+  }
+
+}
+
+/**
+ * Test case for Entity Operations permissions helper.
+ */
+class EntityOperationsPermissionsTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Entity Operations permissions'),
+      'description' => t('Test generation of permissions based on entity operations.'),
+      'group' => t('Entity Operations'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('entity_operations', 'entity_operations_test'));
+  }
+
+  function testPermissions() {
+    $entity_operation_info = entity_operations_get_operation_info('entity_operations_test');
+
+    // Check basic permissions.
+    $permissions = entity_operations_get_entity_permissions('entity_operations_test');
+
+    // We should get the same number of permissions as of operations.
+    $this->assertEqual(count($permissions), 4, "The right number of permissions are generated.");
+    $this->assertTrue(isset($permissions['create entity_operations_tests']), "The 'create' permission is generated.");
+    $this->assertTrue(isset($permissions['edit entity_operations_tests']), "The 'edit' permission is generated.");
+    $this->assertTrue(isset($permissions['view entity_operations_tests']), "The 'view' permission is generated.");
+    $this->assertTrue(isset($permissions['delete entity_operations_tests']), "The 'delete' permission is generated.");
+
+    // Check 'own' permissions.
+    $permissions = entity_operations_get_entity_permissions('entity_operations_test', array('edit', 'delete'));
+
+    $this->assertEqual(count($permissions), 6, "The right number of permissions are generated.");
+    $this->assertTrue(isset($permissions['create entity_operations_tests']), "The 'create' permission is generated.");
+    $this->assertTrue(isset($permissions['edit entity_operations_tests']), "The 'edit' permission is generated.");
+    $this->assertTrue(isset($permissions['edit own entity_operations_tests']), "The 'edit own' permission is generated.");
+    $this->assertTrue(isset($permissions['view entity_operations_tests']), "The 'view' permission is generated.");
+    $this->assertTrue(isset($permissions['delete entity_operations_tests']), "The 'delete' permission is generated.");
+    $this->assertTrue(isset($permissions['delete own entity_operations_tests']), "The 'delete own' permission is generated.");
+  }
+
+}
+
+/**
+ * Test case for operation access using Publish/Unpublish handlers.
+ */
+class EntityOperationsPublishTestCase extends DrupalWebTestCase {
+
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Entity Operations operation access'),
+      'description' => t('Test access of operations using the publish and unpublish handlers.'),
+      'group' => t('Entity Operations'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('entity_operations', 'entity_operations_test'));
+  }
+
+  function testPublish() {
+    // Create a test entity, initially published.
+    $values = array(
+      'title' => 'Foobar',
+      'type' => 'alpha',
+      'status' => TRUE,
+    );
+    $entity = entity_create('entity_operations_test', $values);
+    $entity->save();
+
+    // View the entity.
+    $this->drupalGet('entity_operations_test/' . $entity->eid);
+
+    $this->assertText('Unpublish', "The unpublish tab is shown when the entity is viewed.");
+
+    // Go to the unpublish tab and unpublish it.
+    $this->drupalGet("entity_operations_test/$entity->eid/unpublish");
+
+    $this->assertText("Are you sure you want to unpublish this Test Entity?", "The unpublish tab shows a confirmation question.");
+
+    $this->drupalPost(NULL, array(), 'Unpublish');
+
+    // Clear the cache and reload the entity.
+    entity_get_controller('entity_operations_test')->resetCache();
+    $entity = entity_load_single('entity_operations_test', $entity->eid);
+
+    $this->assertEqual($entity->status, FALSE, "The entity was unpublished.");
+
+    // TODO: assert we got redirected?
+
+    $this->assertText('Publish', "The publish tab is shown when the entity is viewed.");
+
+    $this->drupalGet("entity_operations_test/$entity->eid/publish");
+
+    $this->assertText("Are you sure you want to publish this Test Entity?", "The publish tab shows a confirmation question.");
+
+    $this->drupalPost(NULL, array(), 'Publish');
+
+    // Clear the cache and reload the entity.
+    entity_get_controller('entity_operations_test')->resetCache();
+    $entity = entity_load_single('entity_operations_test', $entity->eid);
+
+    $this->assertEqual($entity->status, TRUE, "The entity was published.");
+  }
+
+}
+
+/**
+ * Test case for Entity Operations VBO support.
+ */
+class EntityOperationsViewsBulkOperationsTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Entity Operations VBO'),
+      'description' => t('Test use of entity operations as operations supplied to Views Bulk Operations.'),
+      'group' => t('Entity Operations'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    // Call the parent with an array of modules to enable for the test.
+    parent::setUp(array('entity_operations', 'entity_operations_test', 'views', 'views_bulk_operations'));
+  }
+
+  function testVBO() {
+    // Create some test entities.
+    $entities = array();
+    $values = array(
+      'title' => 'Foobar',
+      'type' => 'alpha',
+    );
+    $entity = entity_create('entity_operations_test', $values);
+    $entity->save();
+    $entities[$entity->eid] = $entity;
+
+    $values = array(
+      'title' => 'Bizbax',
+      'type' => 'alpha',
+    );
+    $entity = entity_create('entity_operations_test', $values);
+    $entity->save();
+    $entities[$entity->eid] = $entity;
+
+    $this->drupalGet('entity_operations_test_vbo');
+
+    $this->assertText("Foobar", "The first entity's title is shown.");
+    $this->assertText("Bizbax", "The second entity's title is shown.");
+
+    // Perform the 'blue' action on the first entity.
+    $edit = array(
+      'views_bulk_operations[0]' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Make it blue'));
+
+    // Clear the cache so we can load fresh entities.
+    entity_get_controller('entity_operations_test')->resetCache();
+    $entities = entity_load('entity_operations_test', array_keys($entities));
+
+    $this->assertEqual($entities[1]->title, 'Blue', "The first entity's title was changed by the bulk operation.");
+
+    $this->assertText("Blue", "The first entity's title is shown.");
+    $this->assertText("Bizbax", "The second entity's title is shown.");
+
+    // Perform the 'red' action on the second entity.
+    $edit = array(
+      'views_bulk_operations[1]' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Make it red'));
+
+    // Clear the cache so we can load fresh entities.
+    entity_get_controller('entity_operations_test')->resetCache();
+    $entities = entity_load('entity_operations_test', array_keys($entities));
+
+    $this->assertEqual($entities[2]->title, 'Red', "The second entity's title was changed by the bulk operation.");
+
+    $this->assertText("Blue", "The first entity's title is shown.");
+    $this->assertText("Red", "The second entity's title is shown.");
+  }
+
+}

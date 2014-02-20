@@ -1,0 +1,70 @@
+/* SCSS file for Drupal replacement styles */
+
+
+#admin-menu ul {
+  font-size: 9px;
+}
+.admin-menu .fixed {
+  top: 20px;
+}
+
+table {
+  width: 100%;
+}
+
+.blue .ui-slider-range {
+    background: none repeat scroll 0 0 $primary-color;
+}
+.blue .ui-slider-handle {
+    border-color: $primary-color;
+}
+
+.action-links {
+  @include button-group-container();
+
+  & > li {
+    @include button-group-style();
+
+    & > a {
+      @include button($bg: $secondary-color, $padding: $button-tny);
+      margin-right: 0.5em;
+    }
+  }
+}
+
+.form-submit {
+  @include button($padding: $button-tny, $bg: $secondary-color);
+  margin-right: 0.5em;
+
+  &[value=Save] {
+    @include button($padding: $button-tny, $bg: $primary-color);
+    margin-right: 0.5em;
+  }
+  &[value=Delete] {
+    @include button($padding: $button-tny, $bg: $warning-color);
+    margin-right: 0.5em;
+  }
+}
+#edit-actions > a {
+  @include button($padding: $button-tny, $bg: $secondary-color);
+  margin-right: 0.5em;
+}
+
+.form-item,
+.field-suffix,
+.form-managed-file {
+  margin-bottom: 1.5em;
+}
+
+.element-invisible {
+  position: absolute !important;
+  clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
+  overflow: hidden;
+  height: 1px;
+}
+
+#messages {
+  margin: 1.5em auto;
+  max-width: 960px;
+}

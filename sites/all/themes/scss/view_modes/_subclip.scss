@@ -1,0 +1,78 @@
+
+.superclip-wrapper {
+  margin-top: 0.5em;
+  background-color: $secondary-color;
+  text-transform: uppercase;
+  font-weight: bold;
+  padding: 0.5em 1em 0.35em;
+  & > a {
+    color: #333;
+  }
+  position: relative;
+  & > a {
+    position: absolute;
+    z-index: 99;
+  }
+}
+.superclip-usage {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  right: 0;
+  & > div {
+    padding: 0.5em 1em 0.35em;
+    background-color: $primary-color;
+  }
+}
+
+.subclip-config-link {
+  position: absolute;
+  left: -1em;
+  padding: 0.25em 0 0.35em;
+  color: $secondary-color;
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+.subclip-wrapper {
+  background-color: $secondary-color;
+  margin-top: 1em;
+}
+.subclip-usage {
+  background-color: $primary-color;
+  color: white;
+  text-transform: uppercase;
+  font-weight: bold;
+  padding: 0.5em 1em 0.35em;
+  & > a {
+    color: white;
+  }
+}
+
+.subclip-triangle {
+  background-color: $primary-color;
+}
+
+
+.rules-link-decrease_relation_weight,
+.rules-link-increase_relation_weight {
+  display: inline-block;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

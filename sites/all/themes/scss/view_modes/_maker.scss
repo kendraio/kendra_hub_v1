@@ -1,0 +1,17 @@
+
+.maker-wrapper {
+  background-color: #efefef;
+  padding: 0.5em;
+}
+.maker {
+  @include grid-row($behavior: collapse);
+
+  .maker-image {
+    @include grid-column($columns: 4, $collapse: true);
+    padding-right: 0.5em;
+  }
+  .maker-text {
+    @include grid-column($columns: 8, $collapse: true);
+  }
+}
+

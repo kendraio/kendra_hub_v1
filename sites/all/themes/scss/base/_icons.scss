@@ -1,0 +1,50 @@
+/* Icon styles using Entypo glyphicon */
+
+@font-face {
+  font-family: "Entypo";
+  src: url("../fonts/entypo.eot");
+  src: url("../fonts/entypo.eot?#iefix") format("embedded-opentype"), url("../fonts/entypo.woff") format("woff"), url("../fonts/entypo.ttf") format("truetype"), url("../fonts/entypo.svg#entypo") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "EntypoSocial";
+  src: url("../fonts/entypo-social.eot");
+  src: url("../fonts/entypo-social.eot?#iefix") format("embedded-opentype"), url("../fonts/entypo-social.woff") format("woff"), url("../fonts/entypo-social.ttf") format("truetype"), url("../fonts/entypo-social.svg#entypo") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.icon:before {
+  font-family: "Entypo";
+  speak: none;
+  font-size: 2em;
+  line-height: 0.75em;
+  font-style: normal;
+  font-weight: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon-down:before {
+  content: "\25BE";
+}
+.icon-up:before {
+  content: "\25B4";
+}
+
+.icon-config:before {
+  content: "\2699";
+}
+.icon-search:before {
+  content: "\1F50D";
+}
+.icon-print:before {
+  content: "\E716";
+}
+
+.icon-twitter:before {
+  font-family: "EntypoSocial";
+  content: "\F309";
+}
+
+

@@ -1,0 +1,15 @@
+name = Kendra Hub Clipflo
+core = 7.x
+description = Custom theme for Kendra Hub and Clipflo based on Zurb Foundation
+
+stylesheets[all][] = css/style.css
+
+regions[content] = Content
+features[] = logo
+
+plugins[panels][layouts] = plugins/layouts
+plugins[panels][styles] = plugins/styles
+
+scripts[] = js/vendor/foundation.min.js
+scripts[] = js/script.js
+

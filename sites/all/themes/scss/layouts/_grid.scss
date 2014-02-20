@@ -1,0 +1,25 @@
+
+.l-grid-6 {
+  @include grid-row($behavior: nest);
+
+  .l-grid-item {
+    @include grid-column(2);
+  }
+}
+
+.l-grid-4 {
+  @include grid-row($behavior: nest);
+  margin-bottom: 1.5em;
+
+  .l-grid-item {
+    @include grid-column(3);
+  }
+}
+
+.l-grid-3 {
+  @include grid-row($behavior: nest);
+
+  .l-grid-item {
+    @include grid-column(4);
+  }
+}
