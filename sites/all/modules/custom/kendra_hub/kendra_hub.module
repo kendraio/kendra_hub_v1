@@ -1,0 +1,214 @@
+<?php
+/**
+ * @file
+ * Code for the Kendra Hub feature.
+ */
+
+include_once 'kendra_hub.features.inc';
+
+
+
+/**
+ * Utility function to get time range values from $_GET
+ * Returns an array where first value is t1 (start time)
+ * and second value is t2 (end time).
+ * If range values are not available defaults to 0 - 100
+ */
+function _kendra_hub_get_range_values() {
+  return array(
+    (!empty($_GET['range']['value']) ? $_GET['range']['value'] : 0),
+    (!empty($_GET['range']['value2']) ? $_GET['range']['value2'] : 100),
+  );
+}
+
+/**
+ * Hack: used in Views PHP field to prototype split calculations
+ * @todo formalise this as a Views plugin.
+ */
+function _hub_devel_aggregate_range_calc($row, $data, &$static) {
+
+  list($t1, $t2) = _kendra_hub_get_range_values();
+
+  // Load the relation and get the weight, clip start and end times
+
+  $relation = entity_load('relation', array($data->rid));
+  $relation = reset($relation);
+  $w = !empty($relation->field_relation_weight[LANGUAGE_NONE][0]['value']) ?
+    $relation->field_relation_weight[LANGUAGE_NONE][0]['value'] : 1;
+  $b = !empty($relation->field_clip_use_end[LANGUAGE_NONE][0]['value']) ?
+    $relation->field_clip_use_end[LANGUAGE_NONE][0]['value'] : 100;
+  $t2 = !empty($_GET['range']['value2']) ? $_GET['range']['value2'] : 100;
+  $a = !empty($relation->field_clip_use_start[LANGUAGE_NONE][0]['value']) ?
+    $relation->field_clip_use_start[LANGUAGE_NONE][0]['value'] : 0;
+
+  // Calculate the split
+
+  $value = (min($b, $t2) - max($a, $t1)) * $w;
+
+  // Use the $static variable to keep a running total
+  $static = empty($static) ? $value : $static + $value;
+
+  return $value;
+}
+
+function _hub_devel_aggregate_range_calc_display($value, $data, &$static) {
+  $split = empty($static) ? 0 : ($value / $static) * 100;
+  return number_format($split, 2) . '%';
+}
+
+
+/**
+ * Form alter to add the range slider to views exposed filter
+ */
+function kendra_hub_form_views_exposed_form_alter(&$form, &$form_state) {
+  if ($form_state['view']->name == 'aggregated_rights') {
+    $form['#after_build'][] = '_hub_devel_aggregate_rights_filter';
+    $form['#validate'][] = '_hub_devel_aggregate_rights_filter_validate';
+    $form['range'] = array(
+      '#type' => 'slider',
+      //'#title' => t('Range'),
+      '#default_value' => array(
+        'value' => $form['t1']['#default_value'],
+        'value2' => $form['t2']['#default_value'],
+      ),
+      '#slider_style' => 'blue',
+      '#weight' => -99,
+      '#range' => TRUE,
+      '#min' => 0,
+      '#max' => 100,
+      '#step' => 1,
+      '#display_inputs' => FALSE,
+    );
+  }
+}
+
+/**
+ * Callback used by Views exposed form to transfer range slider values
+ * into filters...
+ */
+function _hub_devel_aggregate_rights_filter_validate($form, &$form_state) {
+  // dpm(func_get_args());
+  if (!empty($form_state['values']['range'])) {
+    $form_state['values']['t1'] = $form_state['values']['range']['value'];
+    $form_state['values']['t2'] = $form_state['values']['range']['value2'];
+  }
+}
+
+function _hub_devel_aggregate_rights_filter($element, &$form_state) {
+  // Unused.
+  return $element;
+}
+
+
+/**
+ * Hack: Using display suite code fields for prototyping
+ * @todo move this to something more permanent
+ */
+function _subclip_render($entity) {
+  return theme('subclip_indicator', array('clip' => $entity));
+}
+function _superclip_render($entity) {
+  return theme('superclip_indicator', array('clip' => $entity));
+}
+
+
+function kendra_hub_theme($existing, $type, $theme, $path) {
+  return array(
+    'superclip_indicator' => array(
+      'template' => 'superclip_indicator',
+      'path' => $path . '/templates',
+      'variables' => array('clip' => NULL),
+    ),
+    'subclip_indicator' => array(
+      'template' => 'subclip_indicator',
+      'path' => $path . '/templates',
+      'variables' => array('clip' => NULL),
+    ),
+    'clip_maker' => array(
+      'template' => 'clip_maker',
+      'path' => $path . '/templates',
+      'variables' => array('clip' => NULL),
+    ),
+  );
+}
+
+
+/**
+ * Alter the Relation edit form
+ */
+function kendra_hub_form_relation_ui_edit_form_alter(&$form, &$form_state) {
+  $form['endpoints']['#access'] = FALSE;
+  $relation = $form_state['relation'];
+
+  // Get the labels of the two endpoints and set friendly title
+  // TODO: only done this for node relations so far...
+  if ($relation->endpoints[LANGUAGE_NONE][0]['entity_type'] == 'node') {
+    if ($relation->endpoints[LANGUAGE_NONE][1]['entity_type'] == 'node') {
+      $source = node_load($form['endpoints'][LANGUAGE_NONE][0]['entity_id']['#value']);
+      $target = node_load($form['endpoints'][LANGUAGE_NONE][1]['entity_id']['#value']);
+      $source_title = check_plain($source->title);
+      $target_title = check_plain($target->title);
+      drupal_set_title('');
+      //drupal_set_title("$source_title → $target_title");
+      $form['fake_title'] = array(
+        '#markup' => '<h1>' . $source_title . ' <small>&#8594;' . $target_title
+          . '</small></h1>',
+      );
+    }
+  }
+
+  if ($relation->relation_type == 'subclip_of') {
+    // TODO: check #access for source fields and don't show range if not allowed
+    $form['usage_range'] = array(
+      '#type' => 'slider',
+      '#title' => t('Usage extent'),
+      '#description' => t('Select the start and end points of where this clip is used.'),
+      '#default_value' => array(
+        'value' => $relation->field_clip_use_start[LANGUAGE_NONE][0]['value'],
+        'value2' => $relation->field_clip_use_end[LANGUAGE_NONE][0]['value'],
+      ),
+      '#slider_style' => 'blue',
+      '#range' => TRUE,
+      '#min' => 0,
+      '#max' => 100,
+      '#step' => 1,
+      '#display_inputs' => FALSE,
+    );
+
+    $form['source_range'] = array(
+      '#type' => 'slider',
+      '#title' => t('Source extent'),
+      '#description' => t('Select which section of the source clip has been used'),
+      '#default_value' => array(
+        'value' => $relation->field_clip_source_start[LANGUAGE_NONE][0]['value'],
+        'value2' => $relation->field_clip_source_end[LANGUAGE_NONE][0]['value'] + 1,
+      ),
+      '#slider_style' => 'blue',
+      '#range' => TRUE,
+      '#min' => 0,
+      '#max' => 100,
+      '#step' => 1,
+      '#display_inputs' => FALSE,
+    );
+    $form['field_clip_source_start']['#access'] = FALSE;
+    $form['field_clip_source_end']['#access'] = FALSE;
+    $form['field_clip_use_start']['#access'] = FALSE;
+    $form['field_clip_use_end']['#access'] = FALSE;
+    $form['#validate'][] = '_hub_dev_form_rel_clip_update';
+  }
+}
+
+/**
+ * Callback to transfer values from range sliders on Relation edit form
+ */
+function _hub_dev_form_rel_clip_update(&$form, &$form_state) {
+  $form_state['values']['field_clip_use_start'][LANGUAGE_NONE][0]['value'] =
+    $form_state['values']['usage_range']['value'];
+  $form_state['values']['field_clip_use_end'][LANGUAGE_NONE][0]['value'] =
+    $form_state['values']['usage_range']['value2'];
+  $form_state['values']['field_clip_source_start'][LANGUAGE_NONE][0]['value'] =
+    $form_state['values']['source_range']['value'];
+  $form_state['values']['field_clip_source_end'][LANGUAGE_NONE][0]['value'] =
+    $form_state['values']['source_range']['value2'];
+}
+
