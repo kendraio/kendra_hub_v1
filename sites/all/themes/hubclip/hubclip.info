@@ -6,6 +6,7 @@ stylesheets[all][] = css/style.css
 
 regions[content] = Content
 features[] = logo
+features[] = favicon
 
 plugins[panels][layouts] = plugins/layouts
 plugins[panels][styles] = plugins/styles
